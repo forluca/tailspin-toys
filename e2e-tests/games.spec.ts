@@ -24,6 +24,49 @@ test.describe('Game Listing and Navigation', () => {
     });
   });
 
+  test.describe('Game catalog filters', () => {
+    test.beforeEach(async ({ page }) => {
+      await page.goto('/');
+    });
+
+    test('filters by multiple categories and matches any selected category', async ({ page }) => {
+      const visibleCards = page.locator('[data-testid="game-card"]:visible');
+
+      await page.getByRole('checkbox', { name: 'Strategy' }).check();
+      await expect(visibleCards).toHaveCount(4);
+      await expect(page.locator('[data-game-title="DevOps Dominion"]:visible')).toHaveCount(1);
+      await expect(page.locator('[data-game-title="Code Puzzle Chronicles"]:visible')).toHaveCount(0);
+
+      await page.getByRole('checkbox', { name: 'Puzzle' }).check();
+      await expect(visibleCards).toHaveCount(8);
+      await expect(page.locator('[data-game-title="Code Puzzle Chronicles"]:visible')).toHaveCount(1);
+    });
+
+    test('filters by publisher and clears the filter', async ({ page }) => {
+      const visibleCards = page.locator('[data-testid="game-card"]:visible');
+      const publisherFilter = page.getByTestId('publisher-filter');
+
+      await publisherFilter.selectOption({ label: 'CodeForge Studios' });
+      await expect(visibleCards).toHaveCount(6);
+      await expect(page.locator('[data-game-title="Code Puzzle Chronicles"]:visible')).toHaveCount(1);
+      await expect(page.locator('[data-game-title="Merge Conflict Mystery"]:visible')).toHaveCount(0);
+
+      await page.getByTestId('clear-filters').click();
+      await expect(visibleCards).toHaveCount(21);
+      await expect(publisherFilter).toHaveValue('');
+    });
+
+    test('combines category and publisher filters', async ({ page }) => {
+      await page.getByRole('checkbox', { name: 'Puzzle' }).check();
+      await page.getByTestId('publisher-filter').selectOption({ label: 'CodeForge Studios' });
+
+      const visibleCards = page.locator('[data-testid="game-card"]:visible');
+      await expect(visibleCards).toHaveCount(1);
+      await expect(visibleCards.first().getByTestId('game-title')).toHaveText('Code Puzzle Chronicles');
+      await expect(page.getByTestId('filter-result-count')).toHaveText('Showing 1 of 21 games.');
+    });
+  });
+
   test('should show each game card rating out of five', async ({ page }) => {
     await page.goto('/');
 
