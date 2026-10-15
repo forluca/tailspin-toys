@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { clampRating, formatStarRating } from './ratings';
+import { clampRating, formatRatingLabel, formatStarRating, getStarRatingStates } from './ratings';
 
 describe('clampRating', () => {
     it('returns the value unchanged when within range', () => {
@@ -14,38 +14,41 @@ describe('clampRating', () => {
     });
 });
 
-describe('formatStarRating', () => {
-    it('returns a not-rated message when rating is null', () => {
-        expect(formatStarRating(null)).toBe('Not yet rated');
+describe('getStarRatingStates', () => {
+    it('returns five full or empty states for whole-number ratings', () => {
+        expect(getStarRatingStates(0)).toEqual(['empty', 'empty', 'empty', 'empty', 'empty']);
+        expect(getStarRatingStates(3)).toEqual(['full', 'full', 'full', 'empty', 'empty']);
+        expect(getStarRatingStates(5)).toEqual(['full', 'full', 'full', 'full', 'full']);
     });
 
-    it('renders only full and empty stars for whole numbers', () => {
-        expect(formatStarRating(0)).toBe('☆☆☆☆☆');
-        expect(formatStarRating(3)).toBe('★★★☆☆');
-        expect(formatStarRating(5)).toBe('★★★★★');
+    it('uses a half-star state when the fraction is at least 0.5', () => {
+        expect(getStarRatingStates(3.5)).toEqual(['full', 'full', 'full', 'half', 'empty']);
+        expect(getStarRatingStates(4.75)).toEqual(['full', 'full', 'full', 'full', 'half']);
     });
 
-    it('renders a half star when the fraction is at least 0.5', () => {
-        expect(formatStarRating(3.5)).toBe('★★★½☆');
-        expect(formatStarRating(4.75)).toBe('★★★★½');
-    });
-
-    it('rounds fractions below 0.5 down to a full star', () => {
-        expect(formatStarRating(3.4)).toBe('★★★☆☆');
-    });
-
-    it('always produces five star positions', () => {
-        for (const rating of [0, 1, 2.5, 3.5, 4, 5]) {
-            expect([...formatStarRating(rating)]).toHaveLength(5);
-        }
+    it('rounds fractions below 0.5 down to an empty star', () => {
+        expect(getStarRatingStates(3.4)).toEqual(['full', 'full', 'full', 'empty', 'empty']);
     });
 
     it('clamps ratings outside the 0–5 range', () => {
-        expect(formatStarRating(-1)).toBe('☆☆☆☆☆');
-        expect(formatStarRating(6)).toBe('★★★★★');
+        expect(getStarRatingStates(-1)).toEqual(['empty', 'empty', 'empty', 'empty', 'empty']);
+        expect(getStarRatingStates(6)).toEqual(['full', 'full', 'full', 'full', 'full']);
+    });
+});
+
+describe('formatStarRating', () => {
+    it('formats star states for catalog labels', () => {
+        expect(formatStarRating(3.5)).toBe('★★★½☆');
+        expect(formatStarRating(null)).toBe('Not yet rated');
+    });
+});
+
+describe('formatRatingLabel', () => {
+    it('formats a rating as a score out of five', () => {
+        expect(formatRatingLabel(4.5)).toBe('4.5 / 5');
     });
 
-    it('is deterministic for the same input', () => {
-        expect(formatStarRating(3.5)).toBe(formatStarRating(3.5));
+    it('shows the requested message when rating is null', () => {
+        expect(formatRatingLabel(null)).toBe('No rating yet');
     });
 });

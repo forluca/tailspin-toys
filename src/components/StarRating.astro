@@ -1,18 +1,37 @@
 ---
-import { clampRating, formatStarRating } from '../lib/ratings';
+import { formatRatingLabel, getStarRatingStates } from '../lib/ratings';
 
 interface Props {
     rating: number | null;
 }
 
 const { rating } = Astro.props;
+const starStates = rating === null ? [] : getStarRatingStates(rating);
 ---
 
-{rating !== null && (
-    <div class="flex items-center">
-        <span class="bg-blue-500/20 text-blue-400 text-sm px-3 py-1 rounded-full" data-testid="game-rating">
-            <span class="text-yellow-400">{formatStarRating(rating)}</span>
-            {clampRating(rating).toFixed(1)}
-        </span>
-    </div>
-)}
+<div class="flex items-center">
+    <span class="bg-blue-500/20 text-blue-400 text-sm px-3 py-1 rounded-full" data-testid="game-rating">
+        {rating === null ? (
+            formatRatingLabel(rating)
+        ) : (
+            <>
+                <span class="inline-flex" data-testid="game-rating-stars" aria-hidden="true">
+                    {starStates.map((state) => (
+                        <span class="relative inline-block" data-rating-star={state}>
+                            <span class="text-slate-500">☆</span>
+                            {state !== 'empty' && (
+                                <span
+                                    class="absolute inset-0 text-yellow-400"
+                                    style={state === 'half' ? 'clip-path: inset(0 50% 0 0)' : undefined}
+                                >
+                                    ★
+                                </span>
+                            )}
+                        </span>
+                    ))}
+                </span>
+                {formatRatingLabel(rating)}
+            </>
+        )}
+    </span>
+</div>
